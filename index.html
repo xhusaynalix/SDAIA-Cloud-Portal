@@ -3,42 +3,415 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SDAIA Cloud Portal</title>
+    <title>SDAIA Cloud Portal - Failover Status</title>
     <style>
-        /* Add your fancy styles here */
+        /* Body and overall styling */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
             background-color: #f0f2f5;
             color: #333;
-            margin: 0;
-            padding: 20px;
-            text-align: center;
         }
 
         h1 {
-            color: #007BFF;
+            color: #fff;
+            text-align: center;
+            font-size: 36px;
+            margin: 20px 0;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
         }
 
-        /* Example logo style */
+        /* Header styling with background gradient */
+        header {
+            background: linear-gradient(45deg, #007BFF, #00C6FF);
+            padding: 20px 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+        }
+
+        /* Logo styling */
         .logo img {
             width: 150px;
+        }
+
+        /* Button styling */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
             margin: 20px 0;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .start-btn {
+            background-color: #007BFF;
+        }
+
+        .undo-btn {
+            background-color: #FF6F61;
+        }
+
+        .failback-btn {
+            background-color: #28a745;
+        }
+
+        .commit-btn {
+            background-color: #dc3545;
+        }
+
+        /* Table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        table th, table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        table td {
+            color: #555;
+        }
+
+        /* Status-specific colors */
+        .status-ready {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .status-failover {
+            color: #ff851b;
+            font-weight: bold;
+        }
+
+        .status-committed {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .status-failback {
+            color: #007BFF;
+            font-weight: bold;
+        }
+
+        /* Fancy Commit Section */
+        #commit-section {
+            display: none;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        #commit-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        #commit-section p {
+            color: #777;
+            margin-bottom: 20px;
+        }
+
+        /* Timer and warning message */
+        #warning-message, #timer {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        #warning-message {
+            color: #ff851b;
+        }
+
+        #timer {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        /* Modal Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            width: 300px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        /* Additional Styles for Smooth Transitions */
+        * {
+            transition: all 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Example logo -->
+
+    <header>
+        <!-- SDAIA Logo (Update the src with actual SDAIA logo URL) -->
         <div class="logo">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/SDAIA-Logo-2.png/1200px-SDAIA-Logo-2.png" alt="SDAIA Logo">
+            <img src="https://via.placeholder.com/150" alt="SDAIA Logo">
         </div>
-        <h1>Welcome to the SDAIA Cloud Portal</h1>
-        <p>This is a simple cloud portal interface.</p>
+        <h1>SDAIA Cloud Portal</h1>
+    </header>
+
+    <div class="container">
+        <div class="action-buttons">
+            <button class="start-btn" onclick="startFailover()">Start Failover</button>
+            <button class="failback-btn" onclick="showFailbackModal()">Failback</button>
+            <button class="undo-btn" onclick="undoFailover()">Undo</button>
+        </div>
+
+        <!-- Warning and Timer -->
+        <div id="warning-message" style="display: none;">
+            Warning: Failover will be committed in 24 hours!
+        </div>
+        <div id="timer" style="display: none;"></div>
+
+        <!-- Commit Failover Section -->
+        <div id="commit-section">
+            <h3>Commit Failover</h3>
+            <p>Do you want to commit the failover now?</p>
+            <button class="commit-btn" onclick="confirmCommitFailover()">Commit Failover</button>
+        </div>
+
+        <!-- Failback Modal -->
+        <div id="failbackModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">Failback Verification</div>
+                <label>
+                    <input type="checkbox" id="primaryDatacenterCheck"> Primary Datacenter - Success
+                </label>
+                <button class="failback-btn" onclick="confirmFailback()">Confirm Failback</button>
+            </div>
+        </div>
+
+        <table class="failover-table">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Failover Plan</th>
+                    <th>Server</th>
+                    <th>Company</th>
+                    <th>Site</th>
+                    <th>Location</th>
+                    <th>VMs</th>
+                    <th>Type</th>
+                </tr>
+            </thead>
+            <tbody id="failover-plan-list">
+                <!-- Rows will be dynamically generated here -->
+            </tbody>
+        </table>
     </div>
+
+    <script>
+        const failoverPlans = [
+            {
+                status: 'Ready',
+                plan: 'Cloud failover plan 1',
+                server: 'lrsvbr11cc',
+                company: '11ten',
+                site: 'All Locations',
+                location: 'Cloud',
+                vms: 1,
+                type: 'Cloud'
+            },
+            {
+                status: 'Ready',
+                plan: 'Failover plan 1',
+                server: 'lrsvbr11',
+                company: '11ten',
+                site: 'Remote',
+                location: 'Local',
+                vms: 1,
+                type: 'Local'
+            }
+        ];
+
+        let timerInterval;
+
+        function renderFailoverPlans() {
+            const tableBody = document.getElementById('failover-plan-list');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            failoverPlans.forEach(plan => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td class="${plan.status === 'Ready' ? 'status-ready' : (plan.status === 'Failover' ? 'status-failover' : (plan.status === 'Failback' ? 'status-failback' : 'status-committed'))}">${plan.status}</td>
+                        <td>${plan.plan}</td>
+                        <td>${plan.server}</td>
+                        <td>${plan.company}</td>
+                        <td>${plan.site}</td>
+                        <td>${plan.location}</td>
+                        <td>${plan.vms}</td>
+                        <td>${plan.type}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function startFailover() {
+            alert('Starting the selected failover plan...');
+            // Update the status to Failover for each plan (for simplicity, we update all plans)
+            failoverPlans.forEach(plan => plan.status = 'Failover');
+            renderFailoverPlans();  // Refresh the table to show the updated status
+
+            // Show the warning message and timer
+            document.getElementById('warning-message').style.display = 'block';
+            document.getElementById('commit-section').style.display = 'block'; // Show the commit option
+
+            // Start the countdown timer for 24 hours (86400 seconds)
+            startCountdown(86400);
+        }
+
+        function confirmCommitFailover() {
+            alert('Failover has been committed.');
+            // Update the status to Committed for each plan (for simplicity, we update all plans)
+            failoverPlans.forEach(plan => plan.status = 'Committed');
+            renderFailoverPlans();  // Refresh the table to show the updated status
+            document.getElementById('commit-section').style.display = 'none'; // Hide the commit option
+            clearTimer();  // Clear the countdown timer and hide the timer
+        }
+
+        function startCountdown(seconds) {
+            const timerDisplay = document.getElementById('timer');
+            timerDisplay.style.display = 'block';
+
+            let timeRemaining = seconds;
+            timerInterval = setInterval(() => {
+                const hours = Math.floor(timeRemaining / 3600);
+                const minutes = Math.floor((timeRemaining % 3600) / 60);
+                const secs = timeRemaining % 60;
+
+                // Display the countdown timer
+                timerDisplay.innerHTML = `Failover will commit in: ${hours}h ${minutes}m ${secs}s`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    commitFailover();
+                }
+
+                timeRemaining--;
+            }, 1000);
+        }
+
+        function commitFailover() {
+            alert('Failover has been automatically committed.');
+            // Update the status to Committed for each plan (for simplicity, we update all plans)
+            failoverPlans.forEach(plan => plan.status = 'Committed');
+            renderFailoverPlans();  // Refresh the table to show the updated status
+            clearTimer();  // Hide the timer when the failover is committed
+        }
+
+        function confirmFailback() {
+            const checkbox = document.getElementById('primaryDatacenterCheck');
+            if (checkbox.checked) {
+                alert('Failback confirmed.');
+                // Update the status to Failback
+                failoverPlans.forEach(plan => plan.status = 'Failback');
+                renderFailoverPlans();  // Refresh the table to show the updated status
+                closeModal();
+            } else {
+                alert('Please verify that the Primary Datacenter has been successful.');
+            }
+        }
+
+        function showFailbackModal() {
+            // Display the failback modal
+            document.getElementById('failbackModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            // Close the failback modal
+            document.getElementById('failbackModal').style.display = 'none';
+        }
+
+        function undoFailover() {
+            alert('Undoing the selected failover plan...');
+            // Reset the status back to Ready (for simplicity, we reset all plans)
+            failoverPlans.forEach(plan => plan.status = 'Ready');
+            clearTimer();
+            renderFailoverPlans();  // Refresh the table to show the updated status
+            document.getElementById('commit-section').style.display = 'none'; // Hide the commit option
+        }
+
+        function clearTimer() {
+            clearInterval(timerInterval);
+            document.getElementById('warning-message').style.display = 'none';
+            document.getElementById('timer').style.display = 'none';
+        }
+
+        window.onload = renderFailoverPlans;
+    </script>
+
 </body>
 </html>
